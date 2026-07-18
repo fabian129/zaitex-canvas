@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callVerb, supabaseServer } from "@/lib/supabase/server";
+import { callVerb } from "@/lib/supabase/server";
+import { storeMedia } from "@/lib/media";
 
 // INTAGET (funktion 2). Tre vägar in — alla landar som variant-rader i DB,
 // och Realtime lyfter dem in i canvasen live (variant-rack-mönstret):
@@ -43,14 +44,7 @@ export async function POST(req: NextRequest) {
       }
       const buf = Buffer.from(await res.arrayBuffer());
       if (buf.byteLength > MAX_PULL_BYTES) throw new Error("URL-pull: filen är för stor (>15MB)");
-      const ext = contentType.split("/")[1]?.split(";")[0] ?? "bin";
-      const path = `pull/${crypto.randomUUID()}.${ext}`;
-      const sb = supabaseServer();
-      const { error: upErr } = await sb.storage
-        .from("canvas-media")
-        .upload(path, buf, { contentType, upsert: false });
-      if (upErr) throw new Error(`storage: ${upErr.message}`);
-      mediaUrl = sb.storage.from("canvas-media").getPublicUrl(path).data.publicUrl;
+      mediaUrl = await storeMedia(buf, contentType, "pull");
       source = "url";
     }
 

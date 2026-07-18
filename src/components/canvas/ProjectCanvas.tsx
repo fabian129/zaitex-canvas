@@ -170,16 +170,22 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
         </h1>
         <span
           className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-            status === "live"
+            status === "live" || status === "bridge"
               ? "bg-emerald-950 text-emerald-400"
               : status === "poll"
                 ? "bg-amber-950 text-amber-400"
                 : "bg-zinc-800 text-zinc-400"
           }`}
           data-testid="live-status"
-          title="Realtime-status: live = websocket, polling = fallback"
+          title="Liveness: live = Supabase Realtime · brygga = DB-push via SSE · polling = fallback"
         >
-          {status === "live" ? "● live" : status === "poll" ? "◌ polling" : "… kopplar"}
+          {status === "live"
+            ? "● live"
+            : status === "bridge"
+              ? "● live (brygga)"
+              : status === "poll"
+                ? "◌ polling"
+                : "… kopplar"}
         </span>
         <span className="text-[11px] text-zinc-600">{data.project.format}</span>
 

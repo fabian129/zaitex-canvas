@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callVerb, supabaseServer } from "@/lib/supabase/server";
+import { callVerb } from "@/lib/supabase/server";
+import { storeMedia } from "@/lib/media";
 
 // Uppladdning (intagsväg 3): multipart-fil → storage canvas-media → cv_intake.
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
@@ -20,14 +21,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "filen är för stor (>25MB)" }, { status: 400 });
     }
     const contentType = file.type || "application/octet-stream";
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
-    const path = `uploads/${crypto.randomUUID()}-${safeName}`;
-    const sb = supabaseServer();
-    const { error: upErr } = await sb.storage
-      .from("canvas-media")
-      .upload(path, Buffer.from(await file.arrayBuffer()), { contentType, upsert: false });
-    if (upErr) throw new Error(`storage: ${upErr.message}`);
-    const mediaUrl = sb.storage.from("canvas-media").getPublicUrl(path).data.publicUrl;
+    const mediaUrl = await storeMedia(
+      Buffer.from(await file.arrayBuffer()),
+      contentType,
+      "uploads",
+      file.name
+    );
 
     const data = await callVerb("cv_intake", {
       p_project_id: projectId,

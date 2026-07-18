@@ -41,11 +41,21 @@ export async function callVerb<T = Record<string, unknown>>(
   params: Record<string, unknown>
 ): Promise<T> {
   if (!VERB_WHITELIST.has(verb)) throw new Error(`okänt verb: ${verb}`);
+  const allParams = { p_key: process.env.CANVAS_VERB_KEY, ...params };
+
+  // Lokal-läget (bevis-stack utan egress): samma verb, direkt mot Postgres.
+  const { localPgEnabled, localCallVerb } = await import("@/lib/localdb");
+  if (localPgEnabled()) {
+    try {
+      return (await localCallVerb(verb, allParams)) as T;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`${verb}: ${msg}`);
+    }
+  }
+
   const sb = supabaseServer();
-  const { data, error } = await sb.rpc(verb, {
-    p_key: process.env.CANVAS_VERB_KEY,
-    ...params,
-  });
+  const { data, error } = await sb.rpc(verb, allParams);
   if (error) throw new Error(`${verb}: ${error.message}`);
   return data as T;
 }

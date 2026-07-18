@@ -40,3 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 !.env.example
+
+# lokal bevis-stack
+.local-pg/
+public/uploads/
+test-results/

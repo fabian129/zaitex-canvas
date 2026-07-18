@@ -61,7 +61,7 @@ export function BatchPanel({
           <div
             key={batch.id}
             className="rounded-lg border border-zinc-800 bg-zinc-900 p-3"
-            data-testid={`batch-${batch.id}`}
+            data-testid={`batch-box-${batch.id}`}
           >
             <div className="flex items-center justify-between gap-2">
               <div>

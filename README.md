@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zaitex Canvas
 
-## Getting Started
+Storyboard-canvasen (FÖNSTER 3 i Fable-slutspurten): projekt → scener → shots i ordnad grid,
+variant-rack med kurering, Soul ID:s, versionerade promptkedjor, batchgrind med tak,
+intag (agent/URL/uppladdning) och export — allt live mot DB.
 
-First, run the development server:
+**Motorerna är mock-adapters** bakom en dokumenterad seam (`docs/ADAPTER_SEAM.md`).
+Prompt-hjärnans skelett ligger som skill-drafts flaggade OBEVISADE i `smedjan.skill_registry`
+(`canvas-*`), med bevis-loopens design klar (`canvas-bevisloopen`).
 
+## Stack
+- Next 16 (App Router) + React 19 + Tailwind 4 + dnd-kit
+- Supabase (Zaitex os): eget schema `canvas`, publika läs-vyer `cv_*`, skriv-verb `cv_*`
+  (security definer + verb-nyckel), Realtime-publikation på canvas-tabellerna
+- Migrationerna: `supabase/migrations/` (applicerade i prod 2026-07-18)
+
+## Köra mot prod (Zaitex os)
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.production.example .env.local   # fyll i anon-nyckel + verb-nyckel
+npm install && npm run dev              # http://localhost:3000
 ```
+Verb-nyckeln (gatar alla skrivningar): `select value from canvas.app_config where key='verb_key';`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Köra helt lokalt (bevis-stacken — ingen egress behövs)
+```bash
+npm install
+npm run local-stack   # embedded Postgres :55432 + migrationer + seed (första gången)
+npm run dev           # .env.local pekar redan på lokal-läget i det här repot
+```
+Lokal-läget: REST-shim (`/sb-local/rest/v1`), verb direkt mot Postgres, media under
+`public/uploads`, liveness via SSE-bryggan (`/api/dev-events`, DB-push via LISTEN/NOTIFY).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Liveness-trappan
+`live` (Supabase Realtime-websocket) → `live (brygga)` (SSE + pg_notify, för brandväggade
+miljöer) → `polling` (5 s). Statuschipen i verktygsraden visar aktivt läge.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## End-to-end-beviset
+```bash
+npm run e2e   # Playwright: hela kedjeflödet i browsern
+```
+Kör kedjan: bräde → Realtime-intag via DB-rad → URL-pull → uppladdning → souls + kompilerad
+kedja (versionerad) → batchgrind med tak (3 jobb, tak 2 → 1 skippad) → mock-motor → kurering
+(välj/förkasta/kommentar) → export (storyboard-HTML + shotlista-JSON) → drag-omordning.
+Skärmdumpar: `e2e-bevis/`.
 
-## Learn More
+## Dokumentation
+- `docs/ADAPTER_SEAM.md` — motorkontraktet + hur riktiga motorer skruvas i
+- `docs/RUNBOOK.md` — drift, felsökning, härdningslista
+- `docs/INTAG.md` — intagsvägarna (agent/HTTP/URL-pull/uppladdning)
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Relationer i DB (inga parallellstrukturer)
+`canvas.projects` FK:ar mot `leverans.clients`, `studio.content_plans`, `studio.content_items`
+— storyboards hänger på befintliga klienter/planer/items. Prototypen (`studio.canvas_*`)
+är orörd.

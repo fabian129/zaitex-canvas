@@ -28,7 +28,9 @@ export interface CanvasData {
   batchItems: BatchItem[];
 }
 
-export type LiveStatus = "connecting" | "live" | "poll";
+// live = Supabase Realtime (websocket) · bridge = SSE-bryggan (DB-push via LISTEN/NOTIFY,
+// för miljöer där Supabase-socketen inte går att öppna) · poll = sista fallback
+export type LiveStatus = "connecting" | "live" | "bridge" | "poll";
 
 const EMPTY: CanvasData = {
   project: null,
@@ -96,6 +98,7 @@ export function useCanvasData(projectId: string) {
 
   useEffect(() => {
     let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let eventSource: EventSource | null = null;
     let disposed = false;
     void loadAll();
 
@@ -115,7 +118,28 @@ export function useCanvasData(projectId: string) {
       pollTimer = setInterval(() => void loadAll(), 5000);
     };
 
-    const graceTimer = setTimeout(startPolling, 6000);
+    // Fallback-trappan: Supabase Realtime → SSE-bryggan (riktig DB-push) → polling.
+    const tryBridge = () => {
+      if (disposed || eventSource) return;
+      const es = new EventSource("/api/dev-events");
+      es.addEventListener("ready", () => {
+        if (disposed) return;
+        eventSource = es;
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+        setStatus("bridge");
+      });
+      es.onmessage = scheduleRefetch;
+      es.onerror = () => {
+        es.close();
+        if (eventSource === es) eventSource = null;
+        startPolling();
+      };
+    };
+
+    const graceTimer = setTimeout(tryBridge, 6000);
 
     channel.subscribe((st) => {
       if (disposed) return;
@@ -125,9 +149,13 @@ export function useCanvasData(projectId: string) {
           clearInterval(pollTimer);
           pollTimer = null;
         }
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+        }
         setStatus("live");
       } else if (st === "CHANNEL_ERROR" || st === "TIMED_OUT" || st === "CLOSED") {
-        startPolling();
+        tryBridge();
       }
     });
 
@@ -135,6 +163,7 @@ export function useCanvasData(projectId: string) {
       disposed = true;
       clearTimeout(graceTimer);
       if (pollTimer) clearInterval(pollTimer);
+      if (eventSource) eventSource.close();
       if (refetchTimer.current) clearTimeout(refetchTimer.current);
       void sb.removeChannel(channel);
     };
