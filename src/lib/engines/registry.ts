@@ -2,13 +2,15 @@
 // Se docs/ADAPTER_SEAM.md ("Att skruva i en riktig motor").
 
 import { EngineAdapter } from "./adapter";
-import { mockHiggsfield, mockNanoBanana } from "./mock";
+import { mockHiggsfield, mockHiggsfieldAsync, mockNanoBanana } from "./mock";
 
 const ADAPTERS: Record<string, EngineAdapter> = {
   [mockNanoBanana.name]: mockNanoBanana,
   [mockHiggsfield.name]: mockHiggsfield,
+  [mockHiggsfieldAsync.name]: mockHiggsfieldAsync,
+  // "fal": falAdapter,                  // SENARE: första riktiga adaptern (API-nyckel via env)
   // "nano-banana": nanoBananaAdapter,   // SENARE: riktig adapter (API-nyckel via env)
-  // "higgsfield": higgsfieldAdapter,    // SENARE: riktig adapter (MCP)
+  // "higgsfield": higgsfieldAdapter,    // SENARE: riktig adapter (API eller MCP)
 };
 
 export function getAdapter(engine: string): EngineAdapter | null {

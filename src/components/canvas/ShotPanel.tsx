@@ -4,24 +4,29 @@
 // variant-stacken (kurering) och prompt-panelen (kedjan).
 
 import { useEffect, useState } from "react";
-import type { Scene, Shot, ShotSoul, Soul, Variant } from "@/lib/types";
+import type { Scene, Shot, ShotRef, ShotSoul, Soul, Variant } from "@/lib/types";
 import { verb } from "@/lib/api";
 import { PromptPanel } from "./PromptPanel";
+import { RefSlots } from "./RefSlots";
 import { VariantStack } from "./VariantStack";
 import { Chip, btnGhost, inputCls, labelCls } from "./ui";
 
 export function ShotPanel({
   shot,
   scenes,
+  shots,
   souls,
   shotSouls,
+  shotRefs,
   variants,
   onChanged,
 }: {
   shot: Shot;
   scenes: Scene[];
+  shots: Shot[];
   souls: Soul[];
   shotSouls: ShotSoul[];
+  shotRefs: ShotRef[];
   variants: Variant[];
   onChanged: () => void;
 }) {
@@ -49,6 +54,7 @@ export function ShotPanel({
     .filter((ss) => ss.shot_id === shot.id)
     .map((ss) => souls.find((s) => s.id === ss.soul_id))
     .filter((s): s is Soul => Boolean(s));
+  const linkedRefs = shotRefs.filter((r) => r.shot_id === shot.id);
 
   const saveFields = async () => {
     await verb("cv_shot_set", {
@@ -121,6 +127,15 @@ export function ShotPanel({
         </div>
       </div>
 
+      <RefSlots
+        shot={shot}
+        scenes={scenes}
+        shots={shots}
+        variants={variants}
+        refs={linkedRefs}
+        onChanged={onChanged}
+      />
+
       <div className="flex items-center gap-2">
         <span className={labelCls}>Flytta till scen</span>
         <select
@@ -157,7 +172,7 @@ export function ShotPanel({
       </div>
 
       <hr className="border-zinc-800" />
-      <PromptPanel shot={shot} souls={linkedSouls} onSaved={onChanged} />
+      <PromptPanel shot={shot} souls={linkedSouls} refs={linkedRefs} onSaved={onChanged} />
     </div>
   );
 }

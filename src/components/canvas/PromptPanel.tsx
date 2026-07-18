@@ -7,20 +7,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { verb } from "@/lib/api";
+import {
+  CAMERA_PRESETS,
+  CAMERA_PRESET_MAP,
+  MAX_CAMERA_PRESETS,
+  PRESET_CATEGORIES,
+} from "@/lib/promptbrain/camera";
 import { compileChain } from "@/lib/promptbrain/compile";
 import { OPERATIONS, OPERATION_MAP } from "@/lib/promptbrain/operations";
-import type { ChainStep, PromptVersion, Shot, Soul } from "@/lib/types";
-import { btnGhost, btnPrimary, inputCls, labelCls } from "./ui";
+import type { ChainStep, PromptVersion, Shot, ShotRef, Soul } from "@/lib/types";
+import { Chip, btnGhost, btnPrimary, inputCls, labelCls } from "./ui";
 
-const ENGINE_HINTS = ["", "mock-nano-banana", "mock-higgsfield"];
+const ENGINE_HINTS = ["", "mock-nano-banana", "mock-higgsfield", "mock-higgsfield-async"];
 
 export function PromptPanel({
   shot,
   souls,
+  refs,
   onSaved,
 }: {
   shot: Shot;
   souls: Soul[];
+  refs: ShotRef[]; // redan filtrerade till denna shot
   onSaved: () => void;
 }) {
   const [chain, setChain] = useState<ChainStep[]>([]);
@@ -61,9 +69,19 @@ export function PromptPanel({
   }, [shot.id]);
 
   const { compiled, warnings } = useMemo(
-    () => compileChain(shot, souls, chain, engineHint || null),
-    [shot, souls, chain, engineHint]
+    () => compileChain(shot, souls, chain, engineHint || null, refs),
+    [shot, souls, chain, engineHint, refs]
   );
+
+  const presets = shot.camera_presets ?? [];
+  const setPresets = async (next: string[]) => {
+    try {
+      await verb("cv_shot_set_presets", { p_shot_id: shot.id, p_presets: next });
+      onSaved();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   const save = async () => {
     setSaving(true);
@@ -86,6 +104,56 @@ export function PromptPanel({
 
   return (
     <div className="space-y-3" data-testid="prompt-panel">
+      {/* Kamera-presets (Higgsfield-mönstret): namngiven vokabulär, stack max 3 */}
+      <div>
+        <span className={labelCls}>
+          Kamera-presets (stack {presets.length}/{MAX_CAMERA_PRESETS})
+        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {presets.map((id) => (
+            <Chip key={id} className="bg-violet-950 text-violet-300" data-testid={`preset-chip-${id}`}>
+              {CAMERA_PRESET_MAP[id]?.label ?? id}
+              <button
+                className="ml-1.5 text-violet-500 hover:text-red-400"
+                onClick={() => void setPresets(presets.filter((p) => p !== id))}
+                title="Ta bort preset"
+              >
+                ✕
+              </button>
+            </Chip>
+          ))}
+          <select
+            className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-300 disabled:opacity-40"
+            value=""
+            disabled={presets.length >= MAX_CAMERA_PRESETS}
+            onChange={(e) => {
+              if (e.target.value && !presets.includes(e.target.value)) {
+                void setPresets([...presets, e.target.value]);
+              }
+            }}
+            title={
+              presets.length >= MAX_CAMERA_PRESETS
+                ? `Stackningstaket: max ${MAX_CAMERA_PRESETS} presets (DB:t vägrar fler)`
+                : "Lägg till kamera-preset"
+            }
+            data-testid="preset-select"
+          >
+            <option value="">+ preset…</option>
+            {PRESET_CATEGORIES.map((cat) => (
+              <optgroup key={cat} label={cat}>
+                {CAMERA_PRESETS.filter((p) => p.category === cat && !presets.includes(p.id)).map(
+                  (p) => (
+                    <option key={p.id} value={p.id} title={p.description}>
+                      {p.label}
+                    </option>
+                  )
+                )}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <span className={labelCls}>Kedjan</span>
         {versions.length > 0 && (

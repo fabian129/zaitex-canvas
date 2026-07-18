@@ -4,8 +4,15 @@ export type ProjectStatus = "draft" | "active" | "delivered" | "archived";
 export type ShotStatus = "idea" | "ready" | "queued" | "generated" | "curated" | "locked";
 export type VariantStatus = "new" | "kept" | "rejected";
 export type BatchStatus = "pending_approval" | "approved" | "running" | "done" | "cancelled";
-export type BatchItemStatus = "queued" | "running" | "succeeded" | "failed" | "skipped";
+export type BatchItemStatus =
+  | "queued"
+  | "running"
+  | "dispatched"
+  | "succeeded"
+  | "failed"
+  | "skipped";
 export type SoulKind = "character" | "place" | "prop" | "style";
+export type RefRole = "identitet" | "stil" | "struktur" | "kontinuitet";
 
 export interface Project {
   id: string;
@@ -44,6 +51,7 @@ export interface Shot {
   motion: string;
   duration: number;
   status: ShotStatus;
+  camera_presets: string[];
   content_item_id: string | null;
   selected_variant_id: string | null;
   current_prompt_version_id: string | null;
@@ -91,6 +99,26 @@ export interface ShotSoul {
   position: number;
 }
 
+// Referens-slot (Popcorn-mönstret): typad bildreferens in i kedjan, max 4 per shot.
+export interface ShotRef {
+  shot_id: string;
+  slot: number;
+  project_id: string;
+  role: RefRole;
+  media_url: string;
+  variant_id: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EngineCost {
+  engine: string;
+  cost_units: number;
+  note: string | null;
+  updated_at: string;
+}
+
 export interface ChainStep {
   op: string;
   params: string;
@@ -114,6 +142,7 @@ export interface Batch {
   status: BatchStatus;
   engine: string;
   cap_max_jobs: number;
+  cap_max_cost: number | null;
   approved_by: string | null;
   approved_at: string | null;
   note: string | null;
@@ -132,6 +161,7 @@ export interface BatchItem {
   result_variant_id: string | null;
   error: string | null;
   cost_units: number;
+  external_job_id: string | null;
   started_at: string | null;
   finished_at: string | null;
   created_at: string;

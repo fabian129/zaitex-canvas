@@ -27,6 +27,9 @@ export const VERB_WHITELIST = new Set([
   "cv_soul_upsert",
   "cv_shot_soul_link",
   "cv_shot_soul_unlink",
+  "cv_shot_set_presets",
+  "cv_shot_ref_set",
+  "cv_shot_ref_clear",
   "cv_prompt_save",
   "cv_batch_create",
   "cv_batch_approve",
@@ -34,6 +37,8 @@ export const VERB_WHITELIST = new Set([
   "cv_job_claim",
   "cv_job_finish",
   "cv_job_fail",
+  "cv_job_dispatch",
+  "cv_job_callback",
 ]);
 
 export async function callVerb<T = Record<string, unknown>>(

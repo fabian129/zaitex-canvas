@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import type { PromptVersion, Scene, Shot, ShotSoul, Soul, Variant } from "@/lib/types";
+import type { PromptVersion, Scene, Shot, ShotRef, ShotSoul, Soul, Variant } from "@/lib/types";
 
 // EXPORT (funktion 7):
 //   ?format=storyboard (default) — kundvänlig HTML, printbar → PDF via browserns skriv-ut.
@@ -22,7 +22,7 @@ export async function GET(
   const format = req.nextUrl.searchParams.get("format") ?? "storyboard";
   const sb = supabaseServer();
 
-  const [projRes, scenesRes, shotsRes, variantsRes, pvRes, soulsRes, shotSoulsRes] =
+  const [projRes, scenesRes, shotsRes, variantsRes, pvRes, soulsRes, shotSoulsRes, shotRefsRes] =
     await Promise.all([
       sb.from("cv_projects").select("*").eq("id", projectId).single(),
       sb.from("cv_scenes").select("*").eq("project_id", projectId).order("position"),
@@ -31,6 +31,7 @@ export async function GET(
       sb.from("cv_prompt_versions").select("*"),
       sb.from("cv_souls").select("*"),
       sb.from("cv_shot_souls").select("*"),
+      sb.from("cv_shot_refs").select("*").eq("project_id", projectId).order("slot"),
     ]);
 
   if (projRes.error || !projRes.data) {
@@ -43,6 +44,7 @@ export async function GET(
   const promptVersions = (pvRes.data ?? []) as PromptVersion[];
   const souls = (soulsRes.data ?? []) as Soul[];
   const shotSouls = (shotSoulsRes.data ?? []) as ShotSoul[];
+  const shotRefs = (shotRefsRes.data ?? []) as ShotRef[];
 
   const origin = req.nextUrl.origin;
   const abs = (url: string) => (url.startsWith("/") ? origin + url : url);
@@ -93,9 +95,13 @@ export async function GET(
               status: shot.status,
               duration_s: shot.duration,
               camera: shot.camera,
+              camera_presets: shot.camera_presets ?? [],
               light: shot.light,
               motion: shot.motion,
               souls: soulsFor(shot).map((s) => ({ key: s.key, kind: s.kind })),
+              refs: shotRefs
+                .filter((r) => r.shot_id === shot.id)
+                .map((r) => ({ slot: r.slot, role: r.role, media_url: abs(r.media_url), note: r.note })),
               prompt_version: pv?.version ?? null,
               engine_hint: pv?.engine_hint ?? null,
               compiled_prompt: pv?.compiled ?? shot.description,

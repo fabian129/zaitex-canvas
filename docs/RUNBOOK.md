@@ -4,12 +4,18 @@
 Next-app (UI + API-routes) ↔ Supabase (schema `canvas`): läsning via publika `cv_*`-vyer
 (RLS, endast select), skrivning ENBART via `cv_*`-verb (security definer + verb-nyckel i
 `canvas.app_config`), liveness via Realtime-publikationen (fallback: SSE-brygga → polling),
-motorer bakom adapter-seamen (`docs/ADAPTER_SEAM.md`) — mockar i natt.
+motorer bakom adapter-seamen (`docs/ADAPTER_SEAM.md`, sync + async/webhook) — mockar tills
+nycklar finns. Batchgrinden verkställer jobbtak OCH kostnadstak (`canvas.engine_costs`) i DB.
 
 ## Drift
 - **Starta mot prod:** `.env.production.example` → `.env.local`, `npm run dev` (eller `npm run build && npm start`).
 - **Kö-tick:** `POST /api/runner {"max":50}` — idempotent, säkert från cron/agent. UI:t
   sparkar den själv efter batch-godkännande.
+- **Motorpriser:** `canvas.engine_costs` (kostnadsenheter per jobb) — uppdateras som postgres:
+  `update canvas.engine_costs set cost_units = 5 where engine = 'higgsfield';`
+  Priset stämplas på batch-items vid SKAPANDET (redan skapade batchar påverkas inte).
+- **Webhooks:** `CANVAS_PUBLIC_URL` måste peka på appens publika adress — asynka motorer
+  POST:ar till `<CANVAS_PUBLIC_URL>/api/engine-callback` (idempotent, token-verifierad).
 - **Verb-nyckeln:** `select value from canvas.app_config where key='verb_key';` (endast
   postgres-rollen kan läsa — inga grants till anon/authenticated/service_role).
 - **Nyckelrotation:** `update canvas.app_config set value='<ny>' where key='verb_key';` +
@@ -22,7 +28,10 @@ motorer bakom adapter-seamen (`docs/ADAPTER_SEAM.md`) — mockar i natt.
 | Statuschipen visar `polling` | Websocket + SSE-brygga onåbara | Fungerar ändå (5 s). Kolla brandvägg/egress; bryggan kräver `CANVAS_LOCAL_PG_URL` |
 | `cv: ogiltig verb-nyckel` | Fel/roterad nyckel | Hämta nyckeln ur `canvas.app_config`, uppdatera env |
 | Batch fastnar i `kör` | Runner dog mitt i jobb | `POST /api/runner` igen — claim är `skip locked`; item i `running` utan runner: sätt tillbaka till `queued` manuellt |
+| Item fastnar i `hos motorn` (dispatched) | Motorns webhook kom aldrig fram (fel `CANVAS_PUBLIC_URL`, brandvägg, motorn dog) | Verifiera att `<CANVAS_PUBLIC_URL>/api/engine-callback` nås utifrån; kolla motorns jobb via `external_job_id`; felmarkera manuellt: `select public.cv_job_fail(<nyckel>, '<item_id>', 'webhook uteblev');` |
+| Motor-callback får 403 | Ogiltig/förbrukad token, eller item redan avslutat med annan token | 403 = sluta skicka om. Dubbletter med RÄTT token på avslutade jobb svarar 200 `already` (ofarligt) |
 | Jobb `failed: ingen adapter registrerad` | `batches.engine` saknar adapter | Registrera i `src/lib/engines/registry.ts` |
+| Hela batchen skippas på kostnad | `cap_max_cost` lägre än första jobbets kostnad | Kolla motorpriset: `select * from canvas.engine_costs;` — höj budgeten eller välj billigare motor |
 | Bilder 404 i lokal-läget | `public/uploads` rensad | Ta in bilderna igen (trayn); mockrenders är URL-deterministiska och läker själva |
 
 ## Kända avsteg i natt (sandbox-fakta, inte produktbeslut)

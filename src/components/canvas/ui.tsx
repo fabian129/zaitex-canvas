@@ -37,6 +37,7 @@ export const BATCH_STATUS_LABEL: Record<BatchStatus, string> = {
 export const ITEM_STATUS_LABEL: Record<BatchItemStatus, string> = {
   queued: "i kö",
   running: "kör",
+  dispatched: "hos motorn",
   succeeded: "klar",
   failed: "fel",
   skipped: "skippad",
@@ -45,14 +46,26 @@ export const ITEM_STATUS_LABEL: Record<BatchItemStatus, string> = {
 export const ITEM_STATUS_COLOR: Record<BatchItemStatus, string> = {
   queued: "text-amber-400",
   running: "text-sky-400 animate-pulse",
+  dispatched: "text-violet-400 animate-pulse",
   succeeded: "text-emerald-400",
   failed: "text-red-400",
   skipped: "text-zinc-500",
 };
 
-export function Chip({ className = "", children }: { className?: string; children: React.ReactNode }) {
+export function Chip({
+  className = "",
+  children,
+  "data-testid": testId,
+}: {
+  className?: string;
+  children: React.ReactNode;
+  "data-testid"?: string;
+}) {
   return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${className}`}>
+    <span
+      className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${className}`}
+      data-testid={testId}
+    >
       {children}
     </span>
   );

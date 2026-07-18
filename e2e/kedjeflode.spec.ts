@@ -1,6 +1,7 @@
-// END-TO-END-BEVISET (FÖNSTER 3 DoD): kedjeflödet i browsern med mockar —
-// shot → kedja → batchgrind (tak) → mock-motor → kurering → export,
-// plus Realtime-intag via DB-rader, URL-pull och uppladdning.
+// END-TO-END-BEVISET (FÖNSTER 3 DoD + canvasen v2 steg 2-5): kedjeflödet i
+// browsern med mockar — shot → kedja → batchgrind (tak) → mock-motor →
+// kurering → export, plus Realtime-intag via DB-rader, URL-pull, uppladdning,
+// kamera-presets (stack), referens-slots, kostnadstak och webhook-seamen.
 // Screenshots hamnar i e2e-bevis/ (gitignoreras inte — de ÄR beviset).
 
 import { expect, test } from "@playwright/test";
@@ -110,9 +111,29 @@ test("kedjeflödet end-to-end med mockar", async ({ page, request }) => {
     }
     await page.getByTestId("engine-hint-select").selectOption("mock-nano-banana");
 
+    // KAMERA-PRESETS (v2 steg 2): stacka 2 ur vokabulären (olika kategorier).
+    // Taket max 3 är DB-mekanik (cv_shot_set_presets + check-constraint).
+    for (const id of ["dolly-in", "low-angle"]) {
+      if ((await page.getByTestId(`preset-chip-${id}`).count()) === 0) {
+        await page.getByTestId("preset-select").selectOption(id);
+      }
+      await expect(page.getByTestId(`preset-chip-${id}`)).toBeVisible({ timeout: 10_000 });
+    }
+
+    // REFERENS-SLOTS (v2 steg 3): sätt slot 1 ur trayn med rollen "stil".
+    if ((await page.getByTestId("ref-clear-1").count()) === 0) {
+      await page.getByTestId("ref-src-1").selectOption({ index: 1 });
+      await page.getByTestId("ref-role-1").selectOption("stil");
+      await page.getByTestId("ref-set-1").click();
+    }
+    await expect(page.getByTestId("ref-clear-1")).toBeVisible({ timeout: 10_000 });
+
     const compiled = await page.getByTestId("compiled-prompt").textContent();
     expect(compiled).toContain("SOUL[character:grundaren]");
     expect(compiled).toContain("SOUL[place:fabriken]");
+    expect(compiled).toContain("REF[1:stil]");
+    expect(compiled).toContain("KAMERA-PRESET[1/2]: Dolly in");
+    expect(compiled).toContain("KAMERA-PRESET[2/2]: Low angle");
     expect(compiled).toContain("KEDJA:");
     expect(compiled).toContain("nano-banana edit-chain v0 — OBEVISAD");
 
@@ -145,6 +166,78 @@ test("kedjeflödet end-to-end med mockar", async ({ page, request }) => {
     await expect(batchBox.getByText("skippad")).toHaveCount(1, { timeout: 30_000 });
     await expect(batchBox.getByText("över taket (cap_max_jobs)")).toBeVisible();
     await page.screenshot({ path: `${BEVIS}/05-batch-kord-med-tak.png`, fullPage: true });
+  });
+
+  await test.step("7b. Kostnadstaket (v2 steg 4): 3 jobb à 4 ku, budget 8 → 1 skippas på kostnad", async () => {
+    await page.getByTestId("batch-mode-toggle").click();
+    for (const title of ["Öppning: maskinhallen", "Resultatet", "Logotyp-avslut"]) {
+      await shotCard(page, title).click();
+    }
+    await page.getByTestId("batch-engine-select").selectOption("mock-higgsfield");
+    await page.getByTestId("batch-cap-input").fill("10");
+    await page.getByTestId("batch-budget-input").fill("8");
+    await page.getByTestId("create-batch").click();
+
+    await expect(page.getByTestId("batch-panel")).toBeVisible();
+    const batchBox = page.locator('[data-testid^="batch-box-"]').first();
+    await expect(batchBox.getByText("väntar på godkännande")).toBeVisible();
+    await expect(batchBox.getByText("budget 8 ku")).toBeVisible();
+
+    await batchBox.locator('[data-testid^="approve-batch-"]').click();
+    // Grinden är DB-mekanik: kumulativ kostnad 4, 8, 12 — tredje jobbet över budgeten.
+    await expect(batchBox.getByText("över taket (cap_max_cost)")).toBeVisible({ timeout: 15_000 });
+    await expect(batchBox.getByText("skippad")).toHaveCount(1, { timeout: 15_000 });
+    await expect(batchBox.getByText("klar", { exact: true }).first()).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.screenshot({ path: `${BEVIS}/09-kostnadstak.png`, fullPage: true });
+  });
+
+  await test.step("7c. Webhook-seamen (v2 steg 5): async-motor → dispatched → callback → klar", async () => {
+    await page.getByTestId("batch-mode-toggle").click();
+    await shotCard(page, "Produkten i drift").click();
+    await page.getByTestId("batch-engine-select").selectOption("mock-higgsfield-async");
+    await page.getByTestId("batch-cap-input").fill("5");
+    await page.getByTestId("batch-budget-input").fill("");
+    await page.getByTestId("create-batch").click();
+
+    const batchBox = page.locator('[data-testid^="batch-box-"]').first();
+    await expect(batchBox.getByText("väntar på godkännande")).toBeVisible();
+    await batchBox.locator('[data-testid^="approve-batch-"]').click();
+
+    // Server-sidan (REST, oberoende av UI-debounce): jobbet ska PASSERA 'dispatched'
+    // och stängas av motorns callback — inte av runnern.
+    const bRes = await request.get(
+      `/sb-local/rest/v1/cv_batches?project_id=eq.${projectId}&order=created_at.desc&limit=1`
+    );
+    const batchId = (await bRes.json())[0].id as string;
+    let sawDispatched = false;
+    let item: { id: string; status: string; external_job_id: string | null } | null = null;
+    for (let i = 0; i < 60; i++) {
+      const res = await request.get(`/sb-local/rest/v1/cv_batch_items?batch_id=eq.${batchId}`);
+      item = (await res.json())[0];
+      if (item?.status === "dispatched") {
+        sawDispatched = true;
+        await page.screenshot({ path: `${BEVIS}/10-webhook-dispatched.png`, fullPage: true });
+      }
+      if (item?.status === "succeeded" || item?.status === "failed") break;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    expect(sawDispatched).toBeTruthy();
+    expect(item?.status).toBe("succeeded");
+    expect(item?.external_job_id).toContain("mock-async-");
+
+    // Callback-mottagaren avvisar fel token (403) — och dubbletter på avslutade
+    // jobb är no-op i DB (idempotensen ligger i cv_job_callback).
+    const bad = await request.post("/api/engine-callback", {
+      data: { item_id: item!.id, token: "fel-token", status: "succeeded", media_url: "x" },
+    });
+    expect(bad.status()).toBe(403);
+
+    await expect(batchBox.getByText("klar", { exact: true }).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.screenshot({ path: `${BEVIS}/11-webhook-klar.png`, fullPage: true });
   });
 
   await test.step("8. Kurering: variant-stacken A/B — välj, förkasta, kommentera", async () => {
@@ -185,6 +278,23 @@ test("kedjeflödet end-to-end med mockar", async ({ page, request }) => {
       "fabriken",
       "grundaren",
     ]);
+    // v2: presets + typade referenser följer med i jobbfilen
+    expect(grundaren.camera_presets).toEqual(["dolly-in", "low-angle"]);
+    expect(grundaren.refs.length).toBeGreaterThanOrEqual(1);
+    expect(grundaren.refs[0].role).toBe("stil");
+
+    // Kö-payload-beviset (v2 steg 3): cv_job_claim bar refs + presets hela vägen
+    // till adaptern — mock-motorn stämplar dem i variantens meta.
+    const vRes = await request.get(
+      `/sb-local/rest/v1/cv_variants?shot_id=eq.${grundaren.shot_id}&order=created_at.desc`
+    );
+    const engineVariant = ((await vRes.json()) as {
+      engine: string | null;
+      meta: { refs?: number; camera_presets?: string[] };
+    }[]).find((v) => v.engine === "mock-nano-banana");
+    expect(engineVariant).toBeTruthy();
+    expect(engineVariant!.meta.refs).toBeGreaterThanOrEqual(1);
+    expect(engineVariant!.meta.camera_presets).toContain("dolly-in");
   });
 
   await test.step("10. Drag-omordning: byt ordning på två shots i samma scen", async () => {

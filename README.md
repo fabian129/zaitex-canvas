@@ -1,8 +1,14 @@
 # Zaitex Canvas
 
-Storyboard-canvasen (FÖNSTER 3 i Fable-slutspurten): projekt → scener → shots i ordnad grid,
-variant-rack med kurering, Soul ID:s, versionerade promptkedjor, batchgrind med tak,
-intag (agent/URL/uppladdning) och export — allt live mot DB.
+Storyboard-canvasen (FÖNSTER 3 i Fable-slutspurten + v2-brädet adhoc-d1ca06d0):
+projekt → scener → shots i ordnad grid, variant-rack med kurering, Soul ID:s,
+versionerade promptkedjor, batchgrind med tak, intag (agent/URL/uppladdning) och
+export — allt live mot DB.
+
+**V2 (motorlandskapets mönster):** kamera-presets med stackning (max 3, Higgsfield-mönstret),
+typade referens-slots per shot (max 4: identitet/stil/struktur/kontinuitet, Popcorn-mönstret),
+kostnadsbaserat tak i batchgrinden (`canvas.engine_costs` + `cap_max_cost`, verkställs i DB)
+och webhook-seamen för asynka motorer (`dispatched` + idempotent `/api/engine-callback`).
 
 **Motorerna är mock-adapters** bakom en dokumenterad seam (`docs/ADAPTER_SEAM.md`).
 Prompt-hjärnans skelett ligger som skill-drafts flaggade OBEVISADE i `smedjan.skill_registry`
@@ -38,10 +44,12 @@ miljöer) → `polling` (5 s). Statuschipen i verktygsraden visar aktivt läge.
 ```bash
 npm run e2e   # Playwright: hela kedjeflödet i browsern
 ```
-Kör kedjan: bräde → Realtime-intag via DB-rad → URL-pull → uppladdning → souls + kompilerad
-kedja (versionerad) → batchgrind med tak (3 jobb, tak 2 → 1 skippad) → mock-motor → kurering
-(välj/förkasta/kommentar) → export (storyboard-HTML + shotlista-JSON) → drag-omordning.
-Skärmdumpar: `e2e-bevis/`.
+Kör kedjan: bräde → Realtime-intag via DB-rad → URL-pull → uppladdning → souls +
+kamera-presets (stack 2/3) + referens-slot + kompilerad kedja (versionerad) → batchgrind
+med jobbtak (3 jobb, tak 2 → 1 skippad) → kostnadstak (3×4 ku, budget 8 → 1 skippad) →
+webhook-seamen (async-mock: dispatched → callback → klar, dubblettskydd) → kurering
+(välj/förkasta/kommentar) → export (storyboard-HTML + shotlista-JSON med refs/presets) →
+drag-omordning. Skärmdumpar: `e2e-bevis/`.
 
 ## Dokumentation
 - `docs/ADAPTER_SEAM.md` — motorkontraktet + hur riktiga motorer skruvas i

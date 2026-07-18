@@ -9,9 +9,11 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import type {
   Batch,
   BatchItem,
+  EngineCost,
   Project,
   Scene,
   Shot,
+  ShotRef,
   ShotSoul,
   Soul,
   Variant,
@@ -24,8 +26,10 @@ export interface CanvasData {
   variants: Variant[];
   souls: Soul[];
   shotSouls: ShotSoul[];
+  shotRefs: ShotRef[];
   batches: Batch[];
   batchItems: BatchItem[];
+  engineCosts: EngineCost[];
 }
 
 // live = Supabase Realtime (websocket) · bridge = SSE-bryggan (DB-push via LISTEN/NOTIFY,
@@ -39,8 +43,10 @@ const EMPTY: CanvasData = {
   variants: [],
   souls: [],
   shotSouls: [],
+  shotRefs: [],
   batches: [],
   batchItems: [],
+  engineCosts: [],
 };
 
 const REALTIME_TABLES = [
@@ -49,6 +55,7 @@ const REALTIME_TABLES = [
   "shots",
   "variants",
   "souls",
+  "shot_refs",
   "prompt_versions",
   "batches",
   "batch_items",
@@ -63,15 +70,18 @@ export function useCanvasData(projectId: string) {
 
   const loadAll = useCallback(async () => {
     const sb = supabaseBrowser();
-    const [proj, scenes, shots, variants, souls, shotSouls, batches] = await Promise.all([
-      sb.from("cv_projects").select("*").eq("id", projectId).maybeSingle(),
-      sb.from("cv_scenes").select("*").eq("project_id", projectId).order("position"),
-      sb.from("cv_shots").select("*").eq("project_id", projectId).order("position"),
-      sb.from("cv_variants").select("*").eq("project_id", projectId).order("created_at"),
-      sb.from("cv_souls").select("*").order("created_at"),
-      sb.from("cv_shot_souls").select("*"),
-      sb.from("cv_batches").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
-    ]);
+    const [proj, scenes, shots, variants, souls, shotSouls, shotRefs, batches, engineCosts] =
+      await Promise.all([
+        sb.from("cv_projects").select("*").eq("id", projectId).maybeSingle(),
+        sb.from("cv_scenes").select("*").eq("project_id", projectId).order("position"),
+        sb.from("cv_shots").select("*").eq("project_id", projectId).order("position"),
+        sb.from("cv_variants").select("*").eq("project_id", projectId).order("created_at"),
+        sb.from("cv_souls").select("*").order("created_at"),
+        sb.from("cv_shot_souls").select("*"),
+        sb.from("cv_shot_refs").select("*").eq("project_id", projectId).order("slot"),
+        sb.from("cv_batches").select("*").eq("project_id", projectId).order("created_at", { ascending: false }),
+        sb.from("cv_engine_costs").select("*").order("engine"),
+      ]);
     const batchIds = (batches.data ?? []).map((b: Batch) => b.id);
     const batchItems = batchIds.length
       ? await sb.from("cv_batch_items").select("*").in("batch_id", batchIds).order("created_at")
@@ -83,8 +93,10 @@ export function useCanvasData(projectId: string) {
       variants: (variants.data as Variant[]) ?? [],
       souls: (souls.data as Soul[]) ?? [],
       shotSouls: (shotSouls.data as ShotSoul[]) ?? [],
+      shotRefs: (shotRefs.data as ShotRef[]) ?? [],
       batches: (batches.data as Batch[]) ?? [],
       batchItems: (batchItems.data as BatchItem[]) ?? [],
+      engineCosts: (engineCosts.data as EngineCost[]) ?? [],
     });
     setLoading(false);
   }, [projectId]);

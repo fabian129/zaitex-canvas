@@ -34,6 +34,7 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [batchEngine, setBatchEngine] = useState("mock-nano-banana");
   const [batchCap, setBatchCap] = useState("10");
+  const [batchBudget, setBatchBudget] = useState(""); // tom = inget kostnadstak
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -121,6 +122,9 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
     }
   };
 
+  const engineCost =
+    data.engineCosts.find((c) => c.engine === batchEngine)?.cost_units ?? 1;
+
   const createBatch = async () => {
     const ids = [...checked];
     if (!ids.length) return;
@@ -130,6 +134,7 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
         p_shot_ids: ids,
         p_engine: batchEngine,
         p_cap_max_jobs: parseInt(batchCap, 10) || 10,
+        p_cap_max_cost: batchBudget.trim() === "" ? null : parseFloat(batchBudget) || 0,
       });
       setBatchMode(false);
       setChecked(new Set());
@@ -196,7 +201,9 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
             </button>
           ) : (
             <>
-              <span className="text-xs text-amber-400">{checked.size} markerade</span>
+              <span className="text-xs text-amber-400">
+                {checked.size} markerade · ~{checked.size * engineCost} ku
+              </span>
               <select
                 className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs"
                 value={batchEngine}
@@ -205,6 +212,7 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
               >
                 <option value="mock-nano-banana">mock-nano-banana (bild)</option>
                 <option value="mock-higgsfield">mock-higgsfield (video)</option>
+                <option value="mock-higgsfield-async">mock-higgsfield-async (video, webhook)</option>
               </select>
               <input
                 className={`${inputCls} w-16 text-xs`}
@@ -212,6 +220,14 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
                 onChange={(e) => setBatchCap(e.target.value)}
                 title="Tak: max antal jobb som godkännandet släpper igenom"
                 data-testid="batch-cap-input"
+              />
+              <input
+                className={`${inputCls} w-20 text-xs`}
+                value={batchBudget}
+                onChange={(e) => setBatchBudget(e.target.value)}
+                placeholder="budget ku"
+                title="Kostnadstak (kostnadsenheter): grinden skippar allt över budgeten i DB. Tomt = inget kostnadstak."
+                data-testid="batch-budget-input"
               />
               <button
                 className={btnPrimary}
@@ -334,8 +350,10 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
                 <ShotPanel
                   shot={selectedShot}
                   scenes={data.scenes}
+                  shots={data.shots}
                   souls={data.souls}
                   shotSouls={data.shotSouls}
+                  shotRefs={data.shotRefs}
                   variants={data.variants}
                   onChanged={() => void refetch()}
                 />
@@ -363,6 +381,7 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
                 batches={data.batches}
                 batchItems={data.batchItems}
                 shots={data.shots}
+                engineCosts={data.engineCosts}
                 onChanged={() => void refetch()}
               />
             )}

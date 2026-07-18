@@ -3,7 +3,8 @@
 // till en motorfärdig prompt, och lintar kedjan mot kedjereglerna.
 // STATUS: OBEVISAD (skelett) — formerna bevisas via bevis-loopen när motor kopplas.
 
-import { ChainStep, Shot, Soul } from "@/lib/types";
+import { ChainStep, Shot, ShotRef, Soul } from "@/lib/types";
+import { CAMERA_PRESET_MAP, lintPresets } from "./camera";
 import { OPERATION_MAP, PHASE_ORDER } from "./operations";
 import { renderDialect } from "./dialects";
 
@@ -78,9 +79,14 @@ export function compileChain(
   shot: Shot,
   souls: Soul[],
   chain: ChainStep[],
-  engineHint: string | null
+  engineHint: string | null,
+  refs: ShotRef[] = []
 ): CompiledChain {
   const warnings = lintChain(chain, souls);
+  const presets = shot.camera_presets ?? [];
+  for (const w of lintPresets(presets)) {
+    warnings.push({ stepIndex: null, rule: w.rule, message: w.message });
+  }
 
   const sections: string[] = [];
 
@@ -93,6 +99,19 @@ export function compileChain(
       `SOUL[${soul.kind}:${soul.key}]: ${soul.prompt_fragment.trim()}${neg ? ` | UNDVIK: ${neg}` : ""}`
     );
   }
+  // Referens-slots (Popcorn-mönstret): typade bildreferenser motorn ska hålla sig till.
+  for (const ref of [...refs].sort((a, b) => a.slot - b.slot)) {
+    const label = ref.note?.trim() || ref.media_url;
+    sections.push(`REF[${ref.slot}:${ref.role}]: ${label}`);
+  }
+  // Kamera: presets (namngiven vokabulär, stack max 3) före fritextraden.
+  const presetLines = presets
+    .map((id, i) => {
+      const p = CAMERA_PRESET_MAP[id];
+      return p ? `KAMERA-PRESET[${i + 1}/${presets.length}]: ${p.label} — ${p.fragment}` : null;
+    })
+    .filter((l): l is string => Boolean(l));
+  sections.push(...presetLines);
   const cinema = [
     shot.camera.trim() && `KAMERA: ${shot.camera.trim()}`,
     shot.light.trim() && `LJUS: ${shot.light.trim()}`,
