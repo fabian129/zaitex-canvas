@@ -10,7 +10,10 @@ typade referens-slots per shot (max 4: identitet/stil/struktur/kontinuitet, Popc
 kostnadsbaserat tak i batchgrinden (`canvas.engine_costs` + `cap_max_cost`, verkställs i DB)
 och webhook-seamen för asynka motorer (`dispatched` + idempotent `/api/engine-callback`).
 
-**Motorerna är mock-adapters** bakom en dokumenterad seam (`docs/ADAPTER_SEAM.md`).
+**Första riktiga motorn är inkopplad:** `nano-banana` (Googles Gemini-bildmodeller,
+`GEMINI_API_KEY` — nyckeln ligger i Supabase Vault som `gemini_api_key`). Referens-slots
+blir flerbildsinput; tvingad bildmodalitet (`responseModalities: ["IMAGE"]`) + en retry.
+Övriga motorer är mock-adapters bakom samma dokumenterade seam (`docs/ADAPTER_SEAM.md`).
 Prompt-hjärnans skelett ligger som skill-drafts flaggade OBEVISADE i `smedjan.skill_registry`
 (`canvas-*`), med bevis-loopens design klar (`canvas-bevisloopen`).
 

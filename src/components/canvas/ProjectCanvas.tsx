@@ -210,6 +210,7 @@ export function ProjectCanvas({ projectId }: { projectId: string }) {
                 onChange={(e) => setBatchEngine(e.target.value)}
                 data-testid="batch-engine-select"
               >
+                <option value="nano-banana">nano-banana (bild, RIKTIG — Gemini)</option>
                 <option value="mock-nano-banana">mock-nano-banana (bild)</option>
                 <option value="mock-higgsfield">mock-higgsfield (video)</option>
                 <option value="mock-higgsfield-async">mock-higgsfield-async (video, webhook)</option>

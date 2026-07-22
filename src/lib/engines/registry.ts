@@ -3,14 +3,15 @@
 
 import { EngineAdapter } from "./adapter";
 import { mockHiggsfield, mockHiggsfieldAsync, mockNanoBanana } from "./mock";
+import { nanoBanana } from "./nano-banana";
 
 const ADAPTERS: Record<string, EngineAdapter> = {
   [mockNanoBanana.name]: mockNanoBanana,
   [mockHiggsfield.name]: mockHiggsfield,
   [mockHiggsfieldAsync.name]: mockHiggsfieldAsync,
-  // "fal": falAdapter,                  // SENARE: första riktiga adaptern (API-nyckel via env)
-  // "nano-banana": nanoBananaAdapter,   // SENARE: riktig adapter (API-nyckel via env)
-  // "higgsfield": higgsfieldAdapter,    // SENARE: riktig adapter (API eller MCP)
+  [nanoBanana.name]: nanoBanana, // RIKTIG: Googles Gemini-bildmodeller (GEMINI_API_KEY)
+  // "veo": veoAdapter,                  // SENARE: video via samma Google-nyckel
+  // "higgsfield": higgsfieldAdapter,    // SENARE: Soul-träning + presets (API eller MCP)
 };
 
 export function getAdapter(engine: string): EngineAdapter | null {

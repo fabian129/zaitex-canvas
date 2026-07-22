@@ -18,7 +18,7 @@ import { OPERATIONS, OPERATION_MAP } from "@/lib/promptbrain/operations";
 import type { ChainStep, PromptVersion, Shot, ShotRef, Soul } from "@/lib/types";
 import { Chip, btnGhost, btnPrimary, inputCls, labelCls } from "./ui";
 
-const ENGINE_HINTS = ["", "mock-nano-banana", "mock-higgsfield", "mock-higgsfield-async"];
+const ENGINE_HINTS = ["", "nano-banana", "mock-nano-banana", "mock-higgsfield", "mock-higgsfield-async"];
 
 export function PromptPanel({
   shot,
