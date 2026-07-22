@@ -1,18 +1,24 @@
 // PROMPT-HJÄRNAN — per-motor-dialekternas FORMAT.
-// STATUS: OBEVISAD. Dessa format är hypoteser om hur respektive motor vill ha
-// kedjan serverad. De bevisas/justeras via bevis-loopen först när riktiga
-// adapters kopplas (Nano Banana API, Higgsfield MCP). Mock-adaptrarna kör
-// formaten rakt igenom så att seamen är exerciserad redan nu.
+// STATUS: nano-banana v0.1 — SEKUNDÄRBEVISAD (Googles officiella promptguider) med ett
+// primärbevis (IMAGE-modalitet, ligger i adaptern); higgsfield v0 — OBEVISAD.
+// Full bevisning per dialekt via bevis-loopen (skill canvas-bevisloopen).
+// Kanonisk källa: skill-draft "canvas-motor-dialekter"; recepten: "canvas-fotorealism".
 
 const DIALECTS: Record<string, (core: string) => string> = {
-  // Nano Banana (bildredigering): instruktionsblock, en operation i taget,
-  // explicit "behåll allt annat" — hypotes: modellen driftar mindre med
-  // bevarande-klausul per steg.
+  // Nano Banana (bildredigering) v0.1 — ur officiella guiderna:
+  // narrativ läsning (sektionerna är EN scen, inte nyckelord), refs-före-text
+  // ([refs]+[relation]+[scenario] — adaptern skickar bilderna före prompten),
+  // positiv inramning, bevarande-klausul per steg.
   "nano-banana": (core) =>
     [
-      "[FORMAT: nano-banana edit-chain v0 — OBEVISAD]",
+      "[FORMAT: nano-banana edit-chain v0.1 — sekundärbevisad]",
+      "Läs sektionerna nedan som EN sammanhängande scen (RECEPT = subjekt+handling+plats; " +
+        "REF[n] beskriver de bifogade referensbilderna i ordning; KAMERA/LJUS = fotografisk " +
+        "styrning; KEDJA = redigeringssteg som utförs i ordning).",
       core,
-      "REGEL: utför stegen i ordning; bevara allt som inte uttryckligen ändras i varje steg.",
+      "REGEL: utför kedjestegen ett i taget, i ordning; bevara allt som inte uttryckligen " +
+        "ändras i varje steg. Beskriv önskat tillstånd positivt. Bevara identiteten i " +
+        "SOUL-raderna och referensbilderna exakt.",
     ].join("\n"),
 
   // Higgsfield (cinematisk video): blockformat med scene/camera/motion-sektioner —

@@ -135,7 +135,7 @@ test("kedjeflödet end-to-end med mockar", async ({ page, request }) => {
     expect(compiled).toContain("KAMERA-PRESET[1/2]: Dolly in");
     expect(compiled).toContain("KAMERA-PRESET[2/2]: Low angle");
     expect(compiled).toContain("KEDJA:");
-    expect(compiled).toContain("nano-banana edit-chain v0 — OBEVISAD");
+    expect(compiled).toContain("nano-banana edit-chain v0.1 — sekundärbevisad");
 
     await page.getByTestId("save-prompt").click();
     await expect(page.getByTestId("prompt-version-select")).toBeVisible();
@@ -250,7 +250,7 @@ test("kedjeflödet end-to-end med mockar", async ({ page, request }) => {
     await expect(page.getByText("vald", { exact: true })).toBeVisible();
     const count = await variants.count();
     if (count > 1) {
-      await variants.nth(1).getByText("Förkasta").click();
+      await variants.nth(1).getByRole("button", { name: "Förkasta", exact: true }).click();
       await expect(page.getByText("förkastad").first()).toBeVisible();
     }
     await variants.first().locator("input[placeholder^='Kommentar']").fill("stark riktning — kör denna som master");
