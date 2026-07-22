@@ -1,0 +1,74 @@
+[
+  {
+    "arm": "H1-A-etikett",
+    "n": 1,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab1-72c07426-4667-4ac2-b3ee-610bc6284918.png",
+    "mediaUrl": "/uploads/ab1-72c07426-4667-4ac2-b3ee-610bc6284918.png",
+    "variant": "f82b95c1-a6d0-4cc1-bcb1-f3222b04fd60",
+    "ms": 7042
+  },
+  {
+    "arm": "H1-A-etikett",
+    "n": 2,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab1-5a0bfb88-3cc0-4869-a515-480382c2ea2d.png",
+    "mediaUrl": "/uploads/ab1-5a0bfb88-3cc0-4869-a515-480382c2ea2d.png",
+    "variant": "4011abf0-7b58-45b9-bd62-b219083dbdea",
+    "ms": 5986
+  },
+  {
+    "arm": "H1-B-narrativ",
+    "n": 1,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab1-d9a82539-8f55-43f8-9d09-3ee2eaf3165a.png",
+    "mediaUrl": "/uploads/ab1-d9a82539-8f55-43f8-9d09-3ee2eaf3165a.png",
+    "variant": "2d28846f-dcdb-43c4-baaa-0c068c776ee6",
+    "ms": 6100
+  },
+  {
+    "arm": "H1-B-narrativ",
+    "n": 2,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab1-9b13a93e-6c5f-4690-b84a-3c987c517498.png",
+    "mediaUrl": "/uploads/ab1-9b13a93e-6c5f-4690-b84a-3c987c517498.png",
+    "variant": "f509968d-00cc-429e-bb15-e814295e8f98",
+    "ms": 5516
+  },
+  {
+    "arm": "H2-B-recept",
+    "n": 1,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab1-1da31226-2e10-40d0-b125-fe3a40fe808d.png",
+    "mediaUrl": "/uploads/ab1-1da31226-2e10-40d0-b125-fe3a40fe808d.png",
+    "variant": "9274479b-2e33-467b-9dd3-9dedfdb42265",
+    "ms": 6334
+  },
+  {
+    "arm": "H2-B-recept",
+    "n": 2,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab1-2d630358-1ad2-43a7-8300-613b84020a2f.png",
+    "mediaUrl": "/uploads/ab1-2d630358-1ad2-43a7-8300-613b84020a2f.png",
+    "variant": "6a2d218a-f44e-482d-b026-b4b60fdf4750",
+    "ms": 6338
+  },
+  {
+    "arm": "H3-B-finish",
+    "n": 1,
+    "model": "gemini-3-pro-image",
+    "file": "ab1-635ea9db-56b4-4af1-8ef6-a4144253b20d.png",
+    "mediaUrl": "/uploads/ab1-635ea9db-56b4-4af1-8ef6-a4144253b20d.png",
+    "variant": "69d61b19-1c77-46fe-84b2-17c709d769a6",
+    "ms": 20272
+  },
+  {
+    "arm": "H3-B-finish",
+    "n": 2,
+    "model": "gemini-3-pro-image",
+    "file": "ab1-423e3a92-9067-465b-b5b1-01b8a1d255fd.png",
+    "mediaUrl": "/uploads/ab1-423e3a92-9067-465b-b5b1-01b8a1d255fd.png",
+    "variant": "a711509c-1a31-4733-a6d7-be53a1ee89f0",
+    "ms": 20449
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "arm": "P-A-utan-recept",
+    "n": 1,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab2-76b69d39-576a-418e-b883-bb07891b91c2.png",
+    "variant": "8ee99238-1f06-4ab9-ace0-a284d5335e87",
+    "ms": 6808
+  },
+  {
+    "arm": "P-A-utan-recept",
+    "n": 2,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab2-ebffcbe4-97f9-403a-a895-161136e8d9cf.png",
+    "variant": "e918cff6-4d1a-4360-90a3-7a0d92ae4846",
+    "ms": 9111
+  },
+  {
+    "arm": "P-B-recept",
+    "n": 1,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab2-4b17f006-5147-4177-a33f-c5d8c9412037.png",
+    "variant": "23aa3476-03c3-469b-8a51-1ed717183df5",
+    "ms": 5832
+  },
+  {
+    "arm": "P-B-recept",
+    "n": 2,
+    "model": "gemini-2.5-flash-image",
+    "file": "ab2-9ddfe4c0-c280-4047-9d7b-c78b859c8ed6.png",
+    "variant": "b3457c05-2641-4254-84f8-7b66e3a32267",
+    "ms": 7777
+  },
+  {
+    "arm": "P-C-finish",
+    "n": 1,
+    "model": "gemini-3-pro-image",
+    "file": "ab2-dfc4b049-8124-41ec-a67a-d8188c82a931.png",
+    "variant": "de66aca1-fe8f-4c0d-be26-641e515f7b75",
+    "ms": 19230
+  },
+  {
+    "arm": "P-C-finish",
+    "n": 2,
+    "model": "gemini-3-pro-image",
+    "file": "ab2-5ee531e8-283a-48dc-8749-731ff1126a77.png",
+    "variant": "db697925-f8fc-4d04-95a2-8c3e8c93099d",
+    "ms": 22716
+  }
+]

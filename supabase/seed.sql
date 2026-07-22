@@ -21,6 +21,14 @@ values ('19599372-1f10-4301-ba99-c44b79f141be', '3b7f968b-f7fb-451f-857d-2ef2582
         'Zaitex Launch — Organic Growth v2', 'active')
 on conflict (id) do nothing;
 
+-- Studio-kopplingens demo-item (lokal stubb): /from-item/<id> öppnar/skapar dess storyboard
+insert into studio.content_items (id, client_id, content_plan_id, platform, content_type, title, hook, caption, status)
+values ('c0417e57-0000-4000-8000-000000000001', '3b7f968b-f7fb-451f-857d-2ef2582c6578',
+        '19599372-1f10-4301-ba99-c44b79f141be', 'reels', 'video',
+        'Zaitex — produktreel (studio-item)',
+        'Hooken: tre sekunder rakt in i maskinhallen', 'Caption-utkast från studio', 'idea')
+on conflict (id) do nothing;
+
 -- Demo-projektet (samma innehåll som seedades i prod via verben)
 do $$
 declare

@@ -119,6 +119,33 @@ export interface EngineCost {
   updated_at: string;
 }
 
+// Studio-kopplingen: smala läsvyer över leverans/studio (cv_clients m.fl.) —
+// canvasen föder projekt ur riktiga klienter/planer/items, inga parallellstrukturer.
+export interface StudioClient {
+  id: string;
+  name: string;
+}
+
+export interface StudioContentPlan {
+  id: string;
+  client_id: string;
+  campaign_name: string | null;
+  month: string | null;
+  status: string;
+}
+
+export interface StudioContentItem {
+  id: string;
+  client_id: string;
+  content_plan_id: string | null;
+  platform: string | null;
+  content_type: string | null;
+  title: string | null;
+  status: string;
+  hook: string | null;
+  caption: string | null;
+}
+
 export interface ChainStep {
   op: string;
   params: string;
