@@ -39,6 +39,12 @@ export const VERB_WHITELIST = new Set([
   "cv_job_fail",
   "cv_job_dispatch",
   "cv_job_callback",
+  "cv_moodboard_create",
+  "cv_moodboard_set",
+  "cv_mood_intake",
+  "cv_mood_curate",
+  "cv_mood_promote",
+  "cv_mood_reorder",
 ]);
 
 export async function callVerb<T = Record<string, unknown>>(

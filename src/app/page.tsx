@@ -9,13 +9,20 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { verb } from "@/lib/api";
-import type { Project, StudioClient, StudioContentItem, StudioContentPlan } from "@/lib/types";
+import type {
+  Moodboard,
+  Project,
+  StudioClient,
+  StudioContentItem,
+  StudioContentPlan,
+} from "@/lib/types";
 import { btnPrimary, inputCls, labelCls } from "@/components/canvas/ui";
 
 const FORMATS = ["16:9", "9:16", "1:1", "4:5"];
 
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [moodboards, setMoodboards] = useState<Moodboard[]>([]);
   const [clients, setClients] = useState<StudioClient[]>([]);
   const [plans, setPlans] = useState<StudioContentPlan[]>([]);
   const [items, setItems] = useState<StudioContentItem[]>([]);
@@ -26,16 +33,21 @@ export default function Home() {
   const [planId, setPlanId] = useState("");
   const [itemId, setItemId] = useState("");
   const [creating, setCreating] = useState(false);
+  const [mbTitle, setMbTitle] = useState("");
+  const [mbClientId, setMbClientId] = useState("");
+  const [mbCreating, setMbCreating] = useState(false);
 
   const load = useCallback(async () => {
     const sb = supabaseBrowser();
-    const [proj, cl, pl, it] = await Promise.all([
+    const [proj, mb, cl, pl, it] = await Promise.all([
       sb.from("cv_projects").select("*").order("created_at", { ascending: false }),
+      sb.from("cv_moodboards").select("*").order("created_at", { ascending: false }),
       sb.from("cv_clients").select("*").order("name"),
       sb.from("cv_content_plans").select("*").order("campaign_name"),
       sb.from("cv_content_items").select("*").order("title"),
     ]);
     setProjects((proj.data as Project[]) ?? []);
+    setMoodboards((mb.data as Moodboard[]) ?? []);
     setClients((cl.data as StudioClient[]) ?? []);
     setPlans((pl.data as StudioContentPlan[]) ?? []);
     setItems((it.data as StudioContentItem[]) ?? []);
@@ -220,6 +232,93 @@ export default function Home() {
           })}
         </ul>
       )}
+
+      {/* MOODBOARDS — prototyp-ytan: allt som rör design går genom canvasen.
+          Bilder, prototyper, webbkomponenter från Stitch/Paper/Pencil m.fl. */}
+      <section className="mt-12">
+        <h2 className="mb-1 text-lg font-bold">Moodboards</h2>
+        <p className="mb-4 text-sm text-zinc-500">
+          Prototyp-ytan — kurerat material från alla verktyg: bilder, prototyper,
+          webbkomponenter. Agenter skjuter in via cv_mood_intake; kurerat promotas till
+          biblioteket i studio.
+        </p>
+        <form
+          className="mb-4 flex items-end gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!mbTitle.trim()) return;
+            setMbCreating(true);
+            try {
+              const res = await verb<{ id: string }>("cv_moodboard_create", {
+                p_title: mbTitle.trim(),
+                p_client_id: mbClientId || null,
+              });
+              window.location.href = `/m/${res.id}`;
+            } catch (err) {
+              alert(err instanceof Error ? err.message : String(err));
+              setMbCreating(false);
+            }
+          }}
+        >
+          <div className="flex-1">
+            <label className={labelCls}>Nytt moodboard</label>
+            <input
+              className={inputCls}
+              value={mbTitle}
+              onChange={(e) => setMbTitle(e.target.value)}
+              placeholder="t.ex. Bodyfight — visuell riktning"
+              data-testid="new-moodboard-title"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Klient</label>
+            <select
+              className={`${inputCls} text-xs`}
+              value={mbClientId}
+              onChange={(e) => setMbClientId(e.target.value)}
+              data-testid="new-moodboard-client"
+            >
+              <option value="">— ingen —</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button className={btnPrimary} disabled={mbCreating} data-testid="create-moodboard">
+            {mbCreating ? "Skapar…" : "Skapa"}
+          </button>
+        </form>
+        {!loading && moodboards.length > 0 && (
+          <ul className="space-y-2">
+            {moodboards.map((m) => {
+              const client = clients.find((c) => c.id === m.client_id);
+              return (
+                <li key={m.id}>
+                  <Link
+                    href={`/m/${m.id}`}
+                    className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 transition-colors hover:border-violet-700"
+                    data-testid={`moodboard-link-${m.id}`}
+                  >
+                    <div>
+                      <span className="font-semibold">{m.title}</span>
+                      {client && (
+                        <span className="ml-2 rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-300">
+                          {client.name}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-zinc-500">
+                      {m.status} · {m.created_at.slice(0, 10)}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

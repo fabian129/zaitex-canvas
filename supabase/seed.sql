@@ -73,3 +73,23 @@ begin
   perform public.cv_intake(k, proj, '/api/mock/render?seed=424242&engine=agent-intag&kind=image&prompt=referensbild%20fr%C3%A5n%20agent%20(tray)', null, 'agent', 'referens: ljussättning för hallen');
   perform public.cv_intake(k, proj, '/api/mock/render?seed=131313&engine=agent-intag&kind=image&prompt=referens%20direkt%20p%C3%A5%20shoten', sh, 'agent', 'referens: kompositionsförslag för öppningen');
 end $$;
+
+-- Demo-moodboardet (prototyp-ytan): kurerat material från flera källor
+do $$
+declare
+  k text := (select value from canvas.app_config where key='verb_key');
+  mb uuid; r jsonb;
+begin
+  r := public.cv_moodboard_create(k, 'Zaitex — visuell riktning (demo-moodboard)',
+        '3b7f968b-f7fb-451f-857d-2ef2582c6578'::uuid, null, null,
+        'Prototyp-ytan: allt som rör design går genom canvasen — kurerat härifrån promotas till biblioteket i studio.');
+  mb := (r->>'id')::uuid;
+  perform public.cv_mood_intake(k, mb,
+    '/api/mock/render?seed=515151&engine=agent-intag&kind=image&prompt=moodboard%3A%20ljusriktning%20industrihall',
+    'image', 'Ljusriktning: hallen', 'gryningsljus, damm i strålarna', 'agent');
+  perform public.cv_mood_intake(k, mb,
+    '/api/mock/render?seed=616161&engine=agent-intag&kind=image&prompt=moodboard%3A%20palett%20st%C3%A5l%20och%20varmt%20ljus',
+    'image', 'Palett: stål + varmt ljus', null, 'stitch');
+  perform public.cv_mood_intake(k, mb, null,
+    'note', 'Riktning', 'Rått + varmt: industrimaterial, mänskligt ljus. Inga sterila studiomiljöer.', 'manual');
+end $$;

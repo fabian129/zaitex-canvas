@@ -146,6 +146,41 @@ export interface StudioContentItem {
   caption: string | null;
 }
 
+// Moodboards (prototyp-ytan): allt som rör design går genom canvasen —
+// bilder, video, länkar, embeds, notiser och hela webbkomponenter (html).
+export type MoodKind = "image" | "video" | "link" | "embed" | "html" | "note";
+export type MoodStatus = "new" | "kept" | "rejected";
+
+export interface Moodboard {
+  id: string;
+  title: string;
+  client_id: string | null;
+  project_id: string | null;
+  content_item_id: string | null;
+  note: string | null;
+  status: "active" | "archived";
+  meta: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MoodboardItem {
+  id: string;
+  moodboard_id: string;
+  kind: MoodKind;
+  media_url: string | null;
+  title: string | null;
+  caption: string | null;
+  source: string;
+  status: MoodStatus;
+  promoted_at: string | null;
+  promoted_to: string | null;
+  position: number;
+  meta: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ChainStep {
   op: string;
   params: string;
