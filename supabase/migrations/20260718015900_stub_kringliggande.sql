@@ -6,11 +6,23 @@
 create schema if not exists leverans;
 create schema if not exists studio;
 
+-- Rollen som verben grantas till i prod (v5+) — stubben speglar den lokalt.
+do $$ begin
+  if not exists (select from pg_roles where rolname = 'jarvis_port') then
+    create role jarvis_port nologin;
+  end if;
+end $$;
+
 create table if not exists leverans.clients (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  created_at timestamptz not null default now()
+  company_name text,
+  created_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
+-- v5-kolumnerna även om en äldre lokal stubb redan skapat tabellen
+alter table leverans.clients add column if not exists company_name text;
+alter table leverans.clients add column if not exists deleted_at timestamptz;
 
 create table if not exists leverans.projects (
   id uuid primary key default gen_random_uuid(),
